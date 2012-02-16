@@ -1,0 +1,10 @@
+
+
+To use the listen command, you will need able to open all port. Often, the number of socket is limited by the maximun open files limit.
+
+To change it (in Ubuntu, add the following lines in /etc/security/limits.conf
+
+root hard nofile 80000
+root soft nofile 80000
+
+If you don't want to run the program as root (you will may not be able to scan port 0-1024, you will have to replace root by your username.

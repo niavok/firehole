@@ -19,6 +19,7 @@
 
 import sys
 import socket
+import time
 
 def main():
     if len(sys.argv) > 1:
@@ -57,22 +58,28 @@ def listen():
     
     print "Use <Ctrl><D> to stop to listen and generate a rapport"
     
-    while true:
+    while True:
         for port,s in socket_list:
-            conn, addr = s.accept()
-            if conn:
-                print "Connection on port "+port
-                conn.close()
+            try:
+                conn, addr = s.accept()
+                if conn:
+                    print "Connection recevied on port "+str(port)
+                    conn.close()
+            except socket.error, e:
+                pass
+        time.sleep(0.001)            
 
 def create_listening_socket(port):
-    print "Try listen port "+str(port)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setblocking(0)
+
     try:
         s.bind(("", port))
-    except socket.error:
-        print "Fail to open port "+str(port)
-    s.listen(1)
+        s.listen(1)
+        s.setblocking(0)
+    except socket.error, e:
+        print "Fail to open port "+str(port)+ ": %s" %e
+        s.close()
+        return None
     
     return s
 
