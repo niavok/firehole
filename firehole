@@ -1,0 +1,83 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012 Frédéric Bertolus.
+#
+# This file is part of Firehole.
+#
+# Firehole is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Firehole is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Perroquet.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import socket
+
+def main():
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+        
+        if command == "listen":
+            listen()
+        elif command == "attack":
+            if len(sys.argv) > 2:
+                host = sys.argv[2]
+                attack(host)
+            else:
+                print "The 'attack' command must be follow by an host parameter"
+                print ""
+                print_help()    
+        else:
+            print_help()
+    else:
+        print_help()
+
+def print_help():
+    print "usage: firehole listen  "
+    print "                 Open all available port and wait for connections"
+    print "usage: firehole attack HOSTNAME"
+    print "                 Try to connect to open to all tcp port on the host"
+
+def listen():
+    
+    socket_list = list();
+
+    #Listen all 65536 port
+    for i in range(65536):
+        s= create_listening_socket(i)
+        if s:
+            socket_list.append((i,s))
+    
+    print "Use <Ctrl><D> to stop to listen and generate a rapport"
+    
+    while true:
+        for port,s in socket_list:
+            conn, addr = s.accept()
+            if conn:
+                print "Connection on port "+port
+                conn.close()
+
+def create_listening_socket(port):
+    print "Try listen port "+str(port)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setblocking(0)
+    try:
+        s.bind(("", port))
+    except socket.error:
+        print "Fail to open port "+str(port)
+    s.listen(1)
+    
+    return s
+
+
+
+if __name__ == '__main__':
+    main()
+
