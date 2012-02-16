@@ -18,8 +18,10 @@
 # along with Perroquet.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import asyncore
 import socket
 import time
+import signal
 
 def main():
     if len(sys.argv) > 1:
@@ -46,7 +48,16 @@ def print_help():
     print "usage: firehole attack HOSTNAME"
     print "                 Try to connect to open to all tcp port on the host"
 
+listening = True
+
 def listen():
+    
+    def signal_handler(signal, frame):
+        global listening
+        listening = False
+    
+    signal.signal(signal.SIGINT, signal_handler)
+
     
     socket_list = list();
 
@@ -56,9 +67,9 @@ def listen():
         if s:
             socket_list.append((i,s))
     
-    print "Use <Ctrl><D> to stop to listen and generate a rapport"
+    print "Use <Ctrl><C> to stop to listen and generate a rapport"
     
-    while True:
+    while listening:
         for port,s in socket_list:
             try:
                 conn, addr = s.accept()
@@ -68,6 +79,9 @@ def listen():
             except socket.error, e:
                 pass
         time.sleep(0.001)            
+        
+    print "--------------"
+    
 
 def create_listening_socket(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -82,6 +96,38 @@ def create_listening_socket(port):
         return None
     
     return s
+
+def attack(host):
+    clients = []
+
+    for i in range(65536):
+        clients.append(client(host, i))
+    
+    asyncore.loop(use_poll=True, map=mymap)
+
+mymap = {}
+
+class client(asyncore.dispatcher):
+    def __init__(self, host, port):
+        print 'port '+str(port)
+        asyncore.dispatcher.__init__(self, map=mymap)
+        self.host = host
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connect((host, port))
+
+    def handle_connect(self):
+        print 'Connected to', self.host
+
+    def handle_close(self):
+        print 'Close'
+        self.close()
+
+    def handle_write(self):
+        self.send('')
+
+    def handle_read(self):
+        print ' ', self.recv(1024)
 
 
 
