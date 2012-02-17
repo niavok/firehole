@@ -62,7 +62,7 @@ def listen():
     socket_list = list();
 
     #Listen all 65536 port
-    for i in range(65536):
+    for i in range(65535):
         s= create_listening_socket(i)
         if s:
             socket_list.append((i,s))
@@ -82,6 +82,12 @@ def listen():
         
     print "--------------"
     
+    
+    for port,s in socket_list:
+        try:
+            s.close()
+        except socket.error, e:
+            pass
 
 def create_listening_socket(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -97,38 +103,44 @@ def create_listening_socket(port):
     
     return s
 
+mymap = {}
+
 def attack(host):
     clients = []
 
-    for i in range(65536):
+    for i in range(65535):
         clients.append(client(host, i))
-    
-    asyncore.loop(use_poll=True, map=mymap)
 
-mymap = {}
+    asyncore.loop(use_poll=True)
+    #asyncore.loop(map=mymap)
+
+
 
 class client(asyncore.dispatcher):
     def __init__(self, host, port):
-        print 'port '+str(port)
-        asyncore.dispatcher.__init__(self, map=mymap)
+        #asyncore.dispatcher.__init__(self, map=mymap)
+        asyncore.dispatcher.__init__(self)
+        self.port = port
+        
         self.host = host
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((host, port))
 
     def handle_connect(self):
-        print 'Connected to', self.host
+        print 'Connected to port ', self.port
 
     def handle_close(self):
-        print 'Close'
         self.close()
 
     def handle_write(self):
-        self.send('')
+        pass
 
     def handle_read(self):
-        print ' ', self.recv(1024)
+        pass
 
+    def handle_error(self):
+        pass
 
 
 if __name__ == '__main__':
